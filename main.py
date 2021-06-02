@@ -68,30 +68,46 @@ def create_task():
 @app.route('/laporan', methods=['GET', 'POST'])
 def laporan():
     if request.method == 'POST':
-        if not request.json or not 'email' in request.json:
+        if not request.json or not 'name' in request.json:
             abort(400)
 
         # Definisi laporan
+        # laporan = {
+        #     "nama_pelapor": request.json['name'],
+        #     "jenis_pelapor": request.json['jenis_pelapor'],
+        #     "lokasi":request.json['location'],
+        #     "deskripsi_laporan": request.json['description'],
+        #     "jenis_kekerasan":"Dari Hasil ML",
+        #     "penanganan_korban":"Condition",
+        #     "penanganan_kasus":"Condition",
+        #     "email": request.json['email'],
+        #     "no_telphone": request.json['no_telp']
+        # }
+
         laporan = {
-            "nama_pelapor":"Rizki Sabyan",
-            "jenis_pelapor":"Korban",
-            "lokasi":"Bandung",
-            "deskripsi_laporan":"Saya tidak tau harus cerita darimana. Tapi saya merasa diperjual belikan oleh teman saya. Saya memang bukan orang kaya. Tapi disitulah salahnya saya, demi mengikuti tren sekolah, saya mau saja ikut kebiasan teman saya yang kaya. Saya sering di ajak ke club dan ditawari minuman keras yang membuat saya mabuk. Bangun bangun, teman saya memberi saya sejumlah uang. Saya kaget tentang apa yang terjadi. Lama berteman dengan mereka, akhirnya saya sadar bahwa selama ini saya diperjual belikan oleh teman saya.",
-            "jenis_kekerasan":"Trafiking",
-            "penanganan_korban":"rehabilitas",
-            "penanganan_kasus":"bantuan hukum",
-            "email": request.json['email'],
-            "no_telphone": 82362097321
+            "nama_pelapor": request.json['name'],
+            "jenis_pelapor": "",
+            "lokasi":"",
+            "deskripsi_laporan": "",
+            "jenis_kekerasan":"Dari Hasil ML",
+            "penanganan_korban":"Condition",
+            "penanganan_kasus":"Condition",
+            "email": " ",
+            "no_telphone": 825635241
         }
 
         # Clasifi menggunakan model ml
+
         
-
         # Add laporan to db
-        db.laporan_swac.insert_one(laporan)
+        result = db.laporan_swac.insert_one(laporan)
+        result_aja = str(result['_id'])
+
+        # Response : name, email, no telpon, jenis kekerasan , tindakan kasus
 
 
-        return jsonify({'message': 'success'}), 201
+
+        return jsonify({'message': 'Tindakan di process', 'result': result_aja  }), 201
     else:
         daftar_laporan = db.laporan_swac.find()
 
