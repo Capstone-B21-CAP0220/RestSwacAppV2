@@ -85,7 +85,6 @@ def laporan():
             "jenis_pelapor": request.json['jenis_pelapor'],
             "lokasi":request.json['location'],
             "deskripsi_laporan": request.json['description'],
-            "jenis_kekerasan":"Dari Hasil ML",
             "email": request.json['email'],
             "no_telphone": request.json['no_telp']
         }
@@ -110,17 +109,17 @@ def laporan():
         laporan['penanganan_korban'] = class_name[index_class]
 
         if index_class == 0:
-            laporan['penanganan_kasus'] = ''
+            laporan['penanganan_kasus'] = 'Penegak Hukum'
         elif index_class == 1:
-            laporan['penanganan_kasus'] = ''
+            laporan['penanganan_kasus'] = 'Penegak Hukum'
         elif index_class == 2:
-            laporan['penanganan_kasus'] = ''
+            laporan['penanganan_kasus'] = 'Penegak Hukum'
         elif index_class == 3:
-            laporan['penanganan_kasus'] = ''
+            laporan['penanganan_kasus'] = 'Penegak Hukum'
         elif index_class == 4:
-            laporan['penanganan_kasus'] = ''
+            laporan['penanganan_kasus'] = 'Rehabilitasi'
         elif index_class == 5:
-            laporan['penanganan_kasus'] = ''
+            laporan['penanganan_kasus'] = 'Penegak Hukum'
         else :
             laporan['penanganan_kasus'] = 'Tanyakan Pada Diri Sendiri'
 
