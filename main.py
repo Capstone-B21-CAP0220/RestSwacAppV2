@@ -1,8 +1,15 @@
-from flask import Flask, jsonify, request, make_response
+import numpy as np
+import pickle5 as pickle
+from tensorflow import keras
 from flask_pymongo import PyMongo
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from flask import Flask, jsonify, request, make_response, render_template
 
 app = Flask(__name__)
 
+saved_model = keras.models.load_model('./my_model.h5')
+with open('tokenizer.pkl', 'rb') as handle:
+    tokenizer = pickle.load(handle)
 
 mongodb_client = PyMongo(app, uri="mongodb://ichlasul:Kelompok5@cluster0-shard-00-00.w9s2x.mongodb.net:27017,cluster0-shard-00-01.w9s2x.mongodb.net:27017,cluster0-shard-00-02.w9s2x.mongodb.net:27017/db_swac?ssl=true&replicaSet=atlas-14adoc-shard-0&authSource=admin&retryWrites=true&w=majority")
 db = mongodb_client.db
@@ -42,7 +49,8 @@ tasks = [
 
 @app.route("/")
 def hello_world():
-    return "<p>Hello, World! 2</p>"
+    return render_template('index.html')
+    # return "<p>Hello, World! 2</p>"
 
 @app.route('/books', methods=['GET'])
 def getBook():
@@ -72,42 +80,65 @@ def laporan():
             abort(400)
 
         # Definisi laporan
-        # laporan = {
-        #     "nama_pelapor": request.json['name'],
-        #     "jenis_pelapor": request.json['jenis_pelapor'],
-        #     "lokasi":request.json['location'],
-        #     "deskripsi_laporan": request.json['description'],
-        #     "jenis_kekerasan":"Dari Hasil ML",
-        #     "penanganan_korban":"Condition",
-        #     "penanganan_kasus":"Condition",
-        #     "email": request.json['email'],
-        #     "no_telphone": request.json['no_telp']
-        # }
-
         laporan = {
             "nama_pelapor": request.json['name'],
-            "jenis_pelapor": "",
-            "lokasi":"",
-            "deskripsi_laporan": "",
+            "jenis_pelapor": request.json['jenis_pelapor'],
+            "lokasi":request.json['location'],
+            "deskripsi_laporan": request.json['description'],
             "jenis_kekerasan":"Dari Hasil ML",
-            "penanganan_korban":"Condition",
-            "penanganan_kasus":"Condition",
-            "email": " ",
-            "no_telphone": 825635241
+            "email": request.json['email'],
+            "no_telphone": request.json['no_telp']
         }
 
+        laporan['penanganan_korban']
+        laporan['penanganan_kasus']
+
         # Clasifi menggunakan model ml
+        class_name = ['Seksual', 'Trafiking', 'Migran', 'Fisik', 'Psikis', 'Ekonomi']
+        
+        new_sentence = []
+        new_sentence.append(request.json['description'])
+        
+        new_sequences = tokenizer.texts_to_sequences(new_sentence)
+        new_padded = pad_sequences(new_sequences, maxlen=100, padding='post', truncating='post')
+
+        res = saved_model.predict(new_padded)
+        # print("Hasil Clasifikasi kasus  : {}".format(class_name[np.argmax(res)]))
+
+        index_class = np.argmax(res)
+
+        laporan['penanganan_korban'] = class_name[index_class]
+
+        if index_class == 0:
+            laporan['penanganan_kasus'] = ''
+        elif index_class == 1:
+            laporan['penanganan_kasus'] = ''
+        elif index_class == 2:
+            laporan['penanganan_kasus'] = ''
+        elif index_class == 3:
+            laporan['penanganan_kasus'] = ''
+        elif index_class == 4:
+            laporan['penanganan_kasus'] = ''
+        elif index_class == 5:
+            laporan['penanganan_kasus'] = ''
+        else :
+            laporan['penanganan_kasus'] = 'Tanyakan Pada Diri Sendiri'
 
         
         # Add laporan to db
-        result = db.laporan_swac.insert_one(laporan)
-        result_aja = str(result['_id'])
+        db.laporan_swac.insert_one(laporan)
 
         # Response : name, email, no telpon, jenis kekerasan , tindakan kasus
+        response_data = {
+            "name": request.json['name'],
+            "email": request.json['name'],
+            "no_telphone": request.json['name'],
+            "jenis_kekerasan": class_name[index_class],
+            "tindakan_kasus": laporan['penanganan_kasus']
+        }
 
+        return jsonify({'message': 'Tindakan di process', 'data': response_data  }), 201
 
-
-        return jsonify({'message': 'Tindakan di process', 'result': result_aja  }), 201
     else:
         daftar_laporan = db.laporan_swac.find()
 
