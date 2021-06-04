@@ -7,9 +7,11 @@
 
 """ 
 
-    Methods : ['GET', 'POST'] 
+    Methods : ['GET', 'POST', 'DELETE'] 
 
     URL :  https://127.0.0.1:5000/laporan 
+
+    PARAM : id
 
     BODY : {
         "nama_pelapor": String,

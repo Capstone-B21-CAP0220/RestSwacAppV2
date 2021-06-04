@@ -1,11 +1,19 @@
 import numpy as np
 import pickle5 as pickle
+from bson import ObjectId
+from flask_cors import CORS
 from tensorflow import keras
 from flask_pymongo import PyMongo
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from flask import Flask, jsonify, request, make_response, render_template
 
+
+
+    
 app = Flask(__name__)
+CORS(app)
+
+
 
 saved_model = keras.models.load_model('./my_model.h5')
 with open('tokenizer.pkl', 'rb') as handle:
@@ -73,7 +81,7 @@ def create_task():
     tasks.append(task)
     return jsonify({'task': task}), 201
 
-@app.route('/laporan', methods=['GET', 'POST'])
+@app.route('/laporan', methods=['GET', 'POST', 'DELETE'])
 def laporan():
     if request.method == 'POST':
         if not request.json or not 'name' in request.json:
@@ -89,9 +97,6 @@ def laporan():
             "no_telphone": request.json['no_telp']
         }
 
-        laporan['penanganan_korban']
-        laporan['penanganan_kasus']
-
         # Clasifi menggunakan model ml
         class_name = ['Seksual', 'Trafiking', 'Migran', 'Fisik', 'Psikis', 'Ekonomi']
         
@@ -104,10 +109,10 @@ def laporan():
         res = saved_model.predict(new_padded)
         # print("Hasil Clasifikasi kasus  : {}".format(class_name[np.argmax(res)]))
 
-        index_class = np.argmax(res)
-
+        prediksi = res[0]
+        index_class = np.argmax(prediksi[1:])
+            
         laporan['penanganan_korban'] = class_name[index_class]
-
         if index_class == 0:
             laporan['penanganan_kasus'] = 'Penegak Hukum'
         elif index_class == 1:
@@ -123,7 +128,6 @@ def laporan():
         else :
             laporan['penanganan_kasus'] = 'Tanyakan Pada Diri Sendiri'
 
-        
         # Add laporan to db
         db.laporan_swac.insert_one(laporan)
 
@@ -136,18 +140,35 @@ def laporan():
             "tindakan_kasus": laporan['penanganan_kasus']
         }
 
-        return jsonify({'message': 'Tindakan di process', 'data': response_data  }), 201
-
+        return jsonify({'message': 'Tindakan di process', 'data': response_data }), 201
+    elif request.method == 'DELETE':
+        if 'id' in request.args:
+            id = request.args['id']
+            db_response = db.laporan_swac.delete_one({'_id': ObjectId(id)})
+            
+            if db_response.deleted_count == 1:
+                response = {'ok': True, 'message': 'record deleted'}
+            else:
+                response = {'ok': True, 'message': 'no record found'}
+        else:
+            return "Error: No id field provided. Please specify an id."
+        return jsonify(response), 200
     else:
-        daftar_laporan = db.laporan_swac.find()
 
-        data = []
+        if 'id' in request.args:
+            id = request.args['id']
+            data = db.laporan_swac.find_one({'_id': ObjectId(id)})
+            data['_id'] = str(data['_id'])
+            return jsonify(data), 200
+        else:
+            daftar_laporan = db.laporan_swac.find()
+            data = []
+            for elemen in daftar_laporan:
+                elemen['_id'] = str(elemen['_id'])
+                data.append(elemen)
 
-        for elemen in daftar_laporan:
-            elemen['_id'] = str(elemen['_id'])
-            data.append(elemen)
+            return jsonify({'message': 'OK', 'Laporan': [laporan for laporan in data] })
 
-        return jsonify({'message': 'OK', 'Laporan': [laporan for laporan in data] })
 
 @app.errorhandler(404)
 def not_found(error):
